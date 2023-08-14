@@ -195,11 +195,49 @@ Container container3 = response.Container;
 ## Sample 7. 
 
 ```csharp
+using Microsoft.Azure.Cosmos;
 
+// New instance of CosmosClient class using an endpoint and key string
+using CosmosClient client = new(
+    accountEndpoint: Environment.GetEnvironmentVariable("COSMOS_ENDPOINT")!,
+    authKeyOrResourceToken: Environment.GetEnvironmentVariable("COSMOS_KEY")!
+);
+
+// New instance of Database class referencing the server-side database
+Database database = await client.CreateDatabaseIfNotExistsAsync(
+    id: "adventureworks"
+);
 ````
 
+## Sample 8. 
 
+```csharp
+using Microsoft.Azure.Cosmos;
 
+// New instance of CosmosClient class using an endpoint and key string
+using CosmosClient client = new(
+    accountEndpoint: Environment.GetEnvironmentVariable("COSMOS_ENDPOINT")!,
+    authKeyOrResourceToken: Environment.GetEnvironmentVariable("COSMOS_KEY")!
+);
+
+// New instance of Database class referencing the server-side database
+Database database1 = await client.CreateDatabaseAsync(
+    id: "adventureworks-1"
+);
+
+// New instance of Database class referencing the server-side database
+Database database2 = await client.CreateDatabaseIfNotExistsAsync(
+    id: "adventureworks-2"
+);
+
+// <create_database_response>
+// New instance of Database response class referencing the server-side database
+DatabaseResponse response = await client.CreateDatabaseIfNotExistsAsync(
+    id: "adventureworks-3"
+);
+// Parse additional response properties
+Database database3 = response.Database;
+```
 
 
 
