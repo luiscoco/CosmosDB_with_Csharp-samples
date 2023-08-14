@@ -1,4 +1,4 @@
-# CosmosDB_with_Csharp-sample2
+# CosmosDB_with_Csharp-samples
 
 ## Sample 0. Set a connection string
 
