@@ -404,6 +404,109 @@ while (linqFeed.HasMoreResults)
 }
 ```
 
+## Sample 11
+
+```csharp
+using System.Net;
+using Microsoft.Azure.Cosmos;
+
+// New instance of CosmosClient class using an endpoint and key string
+using CosmosClient client = new(
+    accountEndpoint: Environment.GetEnvironmentVariable("COSMOS_ENDPOINT")!,
+    authKeyOrResourceToken: Environment.GetEnvironmentVariable("COSMOS_KEY")!
+);
+
+// New instance of Database class referencing the server-side database
+Database database = await client.CreateDatabaseIfNotExistsAsync(
+    id: "adventureworks"
+);
+
+// New instance of Container class referencing the server-side container
+Container container = await database.CreateContainerIfNotExistsAsync(
+    id: "products",
+    partitionKeyPath: "/category",
+    throughput: 400
+);
+
+// Create new item and add to container
+Product firstItem = new(
+    id: "68719518388",
+    category: "gear-surf-surfboards",
+    name: "Sunnox Surfboard",
+    quantity: 8,
+    sale: true
+);
+
+Product secondItem = new(
+    id: "68719518381",
+    category: "gear-surf-surfboards",
+    name: "Kalbar Surfboard",
+    quantity: 4,
+    sale: false
+);
+
+await container.CreateItemAsync<Product>(
+    item: firstItem,
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+await container.CreateItemAsync<Product>(
+    item: secondItem,
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+// Read existing item from container
+Product readItem = await container.ReadItemAsync<Product>(
+    id: "68719518388",
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+// Read existing item from container
+ItemResponse<Product> readResponse = await container.ReadItemAsync<Product>(
+    id: "68719518388",
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+// Get response metadata
+double requestUnits = readResponse.RequestCharge;
+HttpStatusCode statusCode = readResponse.StatusCode;
+
+// Explicitly get item
+Product readItemExplicit = readResponse.Resource;
+
+// Read existing item from container
+using ResponseMessage readItemStreamResponse = await container.ReadItemStreamAsync(
+    id: "68719518388",
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+// Get stream from response
+using StreamReader readItemStreamReader = new(readItemStreamResponse.Content);
+
+// (optional) Get stream content
+string content = await readItemStreamReader.ReadToEndAsync();
+
+// Create partition key object
+PartitionKey partitionKey = new("gear-surf-surfboards");
+
+// Create list of tuples for each item
+List<(string, PartitionKey)> itemsToFind = new()
+{
+    ("68719518388", partitionKey),
+    ("68719518381", partitionKey)
+};
+
+// Read multiple items
+FeedResponse<Product> feedResponse = await container.ReadManyItemsAsync<Product>(
+    items: itemsToFind
+);
+
+foreach (Product item in feedResponse)
+{
+    Console.WriteLine($"Found item:\t{item.name}");
+}
+```
+
 
 
 
