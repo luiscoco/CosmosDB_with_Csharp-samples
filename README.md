@@ -1,7 +1,17 @@
 # CosmosDB_with_Csharp-sample2
 
+## Sample 0. Set a connection string
 
-## Sample 1
+```csharp
+using Microsoft.Azure.Cosmos;
+
+// New instance of CosmosClient class using a connection string
+using CosmosClient client = new(
+    connectionString: Environment.GetEnvironmentVariable("COSMOS_CONNECTION_STRING")!
+);
+```
+
+## Sample 1. Set the environmental variables
 
 ```csharp
 using Microsoft.Azure.Cosmos;
