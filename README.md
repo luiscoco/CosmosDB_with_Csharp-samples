@@ -240,7 +240,169 @@ Database database3 = response.Database;
 ```
 
 
+## Sample 9
 
+```csharp
+using Microsoft.Azure.Cosmos;
+
+// New instance of CosmosClient class using an endpoint and key string
+using CosmosClient client = new(
+    accountEndpoint: Environment.GetEnvironmentVariable("COSMOS_ENDPOINT")!,
+    authKeyOrResourceToken: Environment.GetEnvironmentVariable("COSMOS_KEY")!
+);
+
+// New instance of Database class referencing the server-side database
+Database database = await client.CreateDatabaseIfNotExistsAsync(
+    id: "adventureworks"
+);
+
+// New instance of Container class referencing the server-side container
+Container container = await database.CreateContainerIfNotExistsAsync(
+    id: "products",
+    partitionKeyPath: "/category",
+    throughput: 400
+);
+
+Product item = new(
+    id: "68719518388",
+    category: "gear-surf-surfboards",
+    name: "Sunnox Surfboard",
+    quantity: 8,
+    sale: true
+);
+
+Product createdItem = await container.CreateItemAsync<Product>(
+    item: item,
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+Product replacedItem = await container.ReplaceItemAsync<Product>(
+    item: item,
+    id: "68719518388",
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+Product upsertedItem = await container.UpsertItemAsync<Product>(
+    item: item,
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+```
+
+## Sample 10
+
+```csharp
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Linq;
+
+// New instance of CosmosClient class using an endpoint and key string
+using CosmosClient client = new(
+    accountEndpoint: Environment.GetEnvironmentVariable("COSMOS_ENDPOINT")!,
+    authKeyOrResourceToken: Environment.GetEnvironmentVariable("COSMOS_KEY")!
+);
+
+// New instance of Database class referencing the server-side database
+Database database = await client.CreateDatabaseIfNotExistsAsync(
+    id: "adventureworks"
+);
+
+// New instance of Container class referencing the server-side container
+Container container = await database.CreateContainerIfNotExistsAsync(
+    id: "products",
+    partitionKeyPath: "/category",
+    throughput: 400
+);
+
+// Create new items and add to container
+Product firstNewItem = new(
+    id: "68719518388",
+    category: "gear-surf-surfboards",
+    name: "Sunnox Surfboard",
+    quantity: 8,
+    sale: true
+);
+
+Product secondNewitem = new(
+    id: "68719518398",
+    category: "gear-surf-surfboards",
+    name: "Noosa Surfboard",
+    quantity: 15,
+    sale: false
+);
+
+await container.CreateItemAsync<Product>(
+    item: firstNewItem,
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+await container.CreateItemAsync<Product>(
+    item: secondNewitem,
+    partitionKey: new PartitionKey("gear-surf-surfboards")
+);
+
+// Query multiple items from container
+using FeedIterator<Product> feed = container.GetItemQueryIterator<Product>(
+    queryText: "SELECT * FROM products"
+);
+
+// Iterate query result pages
+while (feed.HasMoreResults)
+{
+    FeedResponse<Product> response = await feed.ReadNextAsync();
+
+    // Iterate query results
+    foreach (Product item in response)
+    {
+        Console.WriteLine($"Found item:\t{item.name}");
+    }
+}
+
+// Build query definition
+var parameterizedQuery = new QueryDefinition(
+    query: "SELECT * FROM products p WHERE p.category = @partitionKey"
+)
+    .WithParameter("@partitionKey", "gear-surf-surfboards");
+
+// Query multiple items from container
+using FeedIterator<Product> filteredFeed = container.GetItemQueryIterator<Product>(
+    queryDefinition: parameterizedQuery
+);
+
+// Iterate query result pages
+while (filteredFeed.HasMoreResults)
+{
+    FeedResponse<Product> response = await filteredFeed.ReadNextAsync();
+
+    // Iterate query results
+    foreach (Product item in response)
+    {
+        Console.WriteLine($"Found item:\t{item.name}");
+    }
+}
+
+// Get LINQ IQueryable object
+IOrderedQueryable<Product> queryable = container.GetItemLinqQueryable<Product>();
+
+// Construct LINQ query
+var matches = queryable
+    .Where(p => p.category == "gear-surf-surfboards")
+    .Where(p => p.sale == false)
+    .Where(p => p.quantity > 10);
+
+// Convert to feed iterator
+using FeedIterator<Product> linqFeed = matches.ToFeedIterator();
+
+// Iterate query result pages
+while (linqFeed.HasMoreResults)
+{
+    FeedResponse<Product> response = await linqFeed.ReadNextAsync();
+
+    // Iterate query results
+    foreach (Product item in response)
+    {
+        Console.WriteLine($"Matched item:\t{item.name}");
+    }
+}
+```
 
 
 
